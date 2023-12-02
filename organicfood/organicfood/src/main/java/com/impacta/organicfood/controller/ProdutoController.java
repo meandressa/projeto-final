@@ -6,6 +6,7 @@ import com.impacta.organicfood.model.Produto;
 import com.impacta.organicfood.repository.CategoriaRepository;
 import com.impacta.organicfood.repository.ProdutoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,22 +24,24 @@ public class ProdutoController {
 	private ProdutoRepository repository;
 	@Autowired
 	private CategoriaRepository categoriaRepository;
-	
+	@Cacheable(value = "todosProdutos")
 	@GetMapping
 	public ResponseEntity<List<Produto>> getAll() {
 		return ResponseEntity.ok(repository.findAll());
 	}
-	
-	@GetMapping("/{id}")
-	public ResponseEntity<Produto> getById(@PathVariable long id) {
-		return repository.findById(id).map(resp -> ResponseEntity.ok(resp))
-					.orElse(ResponseEntity.notFound().build());
+
+	@Cacheable(value = "produtoPorId", key = "#id")
+	@GetMapping("/id/{id}")
+	public Produto getById(@PathVariable long id) {
+		Optional<Produto> produtoOptional = repository.findById(id);
+		return produtoOptional.orElse(null);
 	}
-	
+	@Cacheable(value = "produtosPorNome", key = "#nome")
 	@GetMapping("/nome/{nome}")
-	public ResponseEntity<List<Produto>> getByNome(@PathVariable String nome) {
-		return ResponseEntity.ok(repository.findAllByNomeContainingIgnoreCase(nome));
+	public List<Produto> getByNome(@PathVariable String nome) {
+		return repository.findAllByNomeContainingIgnoreCase(nome);
 	}
+
 
 	@PostMapping
 	public ResponseEntity<Produto> post(@RequestBody Produto produto) {

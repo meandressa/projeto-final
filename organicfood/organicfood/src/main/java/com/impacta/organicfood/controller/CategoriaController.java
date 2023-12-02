@@ -4,6 +4,7 @@ package com.impacta.organicfood.controller;
 import com.impacta.organicfood.model.Categoria;
 import com.impacta.organicfood.repository.CategoriaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,18 +19,22 @@ public class CategoriaController {
 	
 	@Autowired
 	private CategoriaRepository repository;
-	
+
+	@Cacheable(value = "todasCategorias")
 	@GetMapping
 	public ResponseEntity<List<Categoria>> GetAll(){
 		return ResponseEntity.ok(repository.findAll());
 	}
+
+	@Cacheable(value = "categoriaPorId", key = "#id")
 	@GetMapping("/{id}")
 	public ResponseEntity<Categoria> GetById(@PathVariable long id){
 		return repository.findById(id)
 				.map(resp -> ResponseEntity.ok(resp))
 				.orElse(ResponseEntity.notFound().build());
 	}
-	@GetMapping("/nome/{nome}")
+	@Cacheable(value = "categoriaPorNome", key = "#nome")
+	@GetMapping("/categoria/nome/{nome}")
 	public ResponseEntity<List<Categoria>> GetByNome(@PathVariable String categoria){
 		return ResponseEntity.ok(repository.findAllByNomeContainingIgnoreCase(categoria));
 	}
